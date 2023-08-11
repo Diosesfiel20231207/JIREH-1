@@ -1,0 +1,122 @@
+#include <Wire.h>
+#include "ABlocks_LiquidCrystal_I2C.h"
+#include <Servo.h>
+
+double sfren;
+double sizq;
+double dismin;
+double sder;
+LiquidCrystal_I2C lcd_1(0x27,16,2);
+Servo servo_9;
+
+void Direccionales2() {
+	if ((sfren < 60)) {
+		if ((30 < sder)) {
+			Derecha();
+		}
+
+		if ((30 < sizq)) {
+			IZQ();
+		}
+
+	}
+	else {
+		servo_9.write(90);
+		delay(50);
+		sensores();
+	}
+
+}
+double fnc_ultrasonic_distance(int _t, int _e){
+	unsigned long dur=0;
+	digitalWrite(_t, LOW);
+	delayMicroseconds(5);
+	digitalWrite(_t, HIGH);
+	delayMicroseconds(10);
+	digitalWrite(_t, LOW);
+	dur = pulseIn(_e, HIGH, 18000);
+	if(dur==0)return 999.0;
+	return (dur/57);
+}
+
+void sensores() {
+	sfren = fnc_ultrasonic_distance(A0,A1);
+	sizq = fnc_ultrasonic_distance(12,4);
+	sder = fnc_ultrasonic_distance(A3,A2);
+	lcd_1.setCursor(0, 0);
+	lcd_1.print(String("FREN"));
+	lcd_1.setCursor(5, 0);
+	lcd_1.print(sfren);
+	lcd_1.setCursor(0, 1);
+	lcd_1.print(String("IZQ"));
+	lcd_1.setCursor(5, 1);
+	lcd_1.print(sizq);
+	lcd_1.setCursor(12, 0);
+	lcd_1.print(String("DER"));
+	lcd_1.setCursor(12, 1);
+	lcd_1.print(sder);
+}
+void IZQ() {
+	servo_9.write(30);
+	delay(100);
+}
+void emderesarIZQ() {
+	servo_9.write(80);
+	delay(500);
+	servo_9.write(85);
+	delay(500);
+}
+void Derecha() {
+	servo_9.write(135);
+	delay(100);
+}
+void emderesarIDER() {
+	servo_9.write(95);
+	delay(500);
+}
+void corregir() {
+	if ((sder <= dismin)) {
+		emderesarIZQ();
+	}
+	else {
+		emderesarIDER();
+	}
+
+}
+
+void setup()
+{
+  	servo_9.attach(9);
+	pinMode(A0, OUTPUT);
+	pinMode(A1, INPUT);
+	pinMode(12, OUTPUT);
+	pinMode(4, INPUT);
+	pinMode(A3, OUTPUT);
+	pinMode(A2, INPUT);
+	pinMode(7, OUTPUT);
+	pinMode(8, OUTPUT);
+	pinMode(5, OUTPUT);
+
+	lcd_1.begin();
+	lcd_1.noCursor();
+	lcd_1.backlight();
+	servo_9.write(90);
+	delay(50);
+	dismin = 15;
+
+}
+
+
+void loop()
+{
+
+  	digitalWrite(7,HIGH);
+  	digitalWrite(8,LOW);
+  	analogWrite(5,255);
+  	sensores();
+  	Direccionales2();
+  	if (((sder <= dismin) || (sizq <= dismin))) {
+  		corregir();
+  	}
+
+}
